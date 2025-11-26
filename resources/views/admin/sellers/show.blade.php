@@ -5,7 +5,7 @@
 
 @section('breadcrumbs')
     <li class="breadcrumb-item"><a href="{{ route('admin.sellers.index') }}">Sellers</a></li>
-    <li class="breadcrumb-item active">Details</li>
+    <li class="breadcrumb-item active">Seller Details</li>
 @endsection
 
 @section('content')

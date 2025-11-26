@@ -5,7 +5,7 @@
 
 @section('breadcrumbs')
     <li class="breadcrumb-item"><a href="{{ route('admin.categories.index') }}">Categories</a></li>
-    <li class="breadcrumb-item active">Edit</li>
+    <li class="breadcrumb-item active">{{ $category->name }}</li>
 @endsection
 
 @section('content')
