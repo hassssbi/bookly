@@ -88,7 +88,7 @@
                 <div class="row">
                     @foreach ($books as $book)
                         <div class="col-sm-6 col-md-4 col-lg-3 d-flex">
-                            <div class="card mb-4 flex-fill">
+                            <div class="card mb-4 flex-fill shadow">
                                 @if ($book->cover_path)
                                     <img src="{{ asset('storage/' . $book->cover_path) }}" alt="{{ $book->title }}"
                                         class="card-img-top rounded-top" sizes="max-height: 150px">
