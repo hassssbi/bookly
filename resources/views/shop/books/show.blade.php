@@ -94,16 +94,24 @@
 
                             @auth
                                 @if (auth()->user()->role === 'customer')
-                                    <form action="{{ route('customer.wishlist.store') }}" method="POST" class="mb-3">
-                                        @csrf
-                                        <input type="hidden" name="book_id" value="{{ $book->id }}">
-                                        <button type="submit" class="btn btn-outline-secondary btn-sm">
-                                            <i class="far fa-heart"></i> Add to Wishlist
+                                    @if (!empty($inWishlist) && $inWishlist)
+                                        {{-- Already in wishlist: show disabled button --}}
+                                        <button type="button" class="btn btn-outline-secondary btn-sm mb-3" disabled>
+                                            <i class="far fa-heart"></i> In Wishlist
                                         </button>
-                                    </form>
+                                    @else
+                                        {{-- Not in wishlist yet: show active form --}}
+                                        <form action="{{ route('customer.wishlist.store') }}" method="POST" class="mb-3">
+                                            @csrf
+                                            <input type="hidden" name="book_id" value="{{ $book->id }}">
+                                            <button type="submit" class="btn btn-outline-secondary btn-sm">
+                                                <i class="far fa-heart"></i> Add to Wishlist
+                                            </button>
+                                        </form>
+                                    @endif
                                 @endif
                             @endauth
-
+                            <br>
                             <small class="text-muted">
                                 You will be redirected to a mock payment page after confirming.
                             </small>

@@ -54,7 +54,7 @@ class BookController extends Controller
     }
 
     // Single book hero page
-    public function show(Book $book)
+    /* public function show(Book $book)
     {
         // Only show if active
         if ($book->status !== 'active') {
@@ -71,5 +71,32 @@ class BookController extends Controller
             ->get();
 
         return view('shop.books.show', compact('book', 'related'));
+    } */
+
+    public function show(Book $book)
+    {
+        // Only show if active
+        if ($book->status !== 'active') {
+            abort(404);
+        }
+
+        $book->load(['category', 'seller']);
+
+        $inWishlist = false;
+
+        if (auth()->check() && auth()->user()->role === 'customer') {
+            $inWishlist = Wishlist::where('user_id', auth()->id())
+                ->where('book_id', $book->id)
+                ->exists();
+        }
+
+        // Simple "related" books from same category
+        $related = Book::where('category_id', $book->category_id)
+            ->where('status', 'active')
+            ->where('id', '!=', $book->id)
+            ->limit(4)
+            ->get();
+
+        return view('shop.books.show', compact('book', 'inWishlist', 'related'));
     }
 }
