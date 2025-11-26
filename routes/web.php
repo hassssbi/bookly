@@ -38,15 +38,19 @@ Route::get('/shop/books/{book:slug}', [ShopBookController::class, 'show'])->name
 // Logout (auth only)
 Route::post('logout', [LoginController::class, 'logout'])->name('logout');
 
-// Dashboard (protected)
-Route::get('/', function () {
-    return view('dashboard', [
-        'stats' => [
-            'new_orders' => 0,
-            'total_books' => 0,
-        ],
-    ]);
-})->middleware('auth')->name('dashboard');
+Route::get('/', function (Request $request) {
+    if (! Auth::check()) {
+        return redirect()->route('login');
+    }
+
+    $user = Auth::user();
+    if ($user->role === 'admin' || $user->role === 'seller') {
+        return redirect()->route('dashboard');
+    }
+
+    // Default for customers and other roles
+    return redirect()->route('shop.index');
+});
 
 Route::middleware(['auth', 'role:admin'])
     ->prefix('admin')
