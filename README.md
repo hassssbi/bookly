@@ -1,121 +1,371 @@
-# Bookly
+# 📖 Bookly
 
-Bookly is a Laravel web application for selling and buying books. The app supports three roles: customers, sellers and admins. This README focuses on the application's web & API surface (controllers, routes, models, views), the file structure and the overall architecture.
+Bookly is a Laravel web application for buying and selling books.
+It supports three roles — **Admin**, **Seller**, and **Customer** — and combines a traditional Laravel MVC web app with a small JSON API protected by Sanctum.
 
-## Quick links
+## 🔍 High-level Overview
 
-- Routes: [routes/web.php](routes/web.php), [routes/api.php](routes/api.php)  
-- Main web controller: [`App\Http\Controllers\DashboardController`](app/Http/Controllers/DashboardController.php)  
-- Route provider: [`App\Providers\RouteServiceProvider`](app/Providers/RouteServiceProvider.php)  
-- Core models: [`App\Models\Book`](app/Models/Book.php), [`App\Models\Category`](app/Models/Category.php), [`App\Models\Order`](app/Models/Order.php), [`App\Models\OrderItem`](app/Models/OrderItem.php), [`App\Models\SellerProfile`](app/Models/SellerProfile.php), [`App\Models\User`](app/Models/User.php), [`App\Models\Wishlist`](app/Models/Wishlist.php)  
-- Views directory: [resources/views](resources/views)  
-- App config: [config/app.php](config/app.php)  
-- Tests config: [phpunit.xml](phpunit.xml)  
-- Front-end / package manifest: [package.json](package.json)
+### Roles
 
-## Overview & Features
+* **Admin**
 
-- Roles
-  - Admin: manage users, approve sellers and manage book categories (admin routes under `admin/*`). See routes in [routes/web.php](routes/web.php) and API admin group in [routes/api.php](routes/api.php).
-  - Seller: maintain seller profile, create & manage books, view seller orders. Seller routes are grouped under `seller/*` in both web and API routes. Example controller namespaces are visible in [routes/web.php](routes/web.php).
-  - Customer: browse shop, view book pages, add books to wishlist, create orders and view past orders. Shop pages and checkout flows are wired via web controllers (see [routes/web.php](routes/web.php)) and API endpoints (see [routes/api.php](routes/api.php)).
+  * Manage **users**
+  * Review & approve/reject **seller applications**
+  * Manage **categories**
+  * See a high-level **analytics dashboard** (users, sellers, orders, revenue, top categories/sellers)
 
-## Architecture & Patterns
+* **Seller**
 
-- MVC structure (Laravel native)
-  - Models live under `app/Models` (e.g. [`App\Models\Book`](app/Models/Book.php)). Models implement relationships and query scopes used by controllers and views.
-  - Controllers under `app/Http/Controllers` and sub-namespaces (Admin, Seller, Customer, Shop, Api). Example: [`App\Http\Controllers\DashboardController`](app/Http/Controllers/DashboardController.php) determines which dashboard to show based on the authenticated user's role.
-  - Views under `resources/views` – Blade templates render the public shop, dashboards, seller forms and admin pages.
-- Routes
-  - Web routes: [routes/web.php](routes/web.php) – handles browser pages and form submissions.
-  - API routes: [routes/api.php](routes/api.php) – JSON endpoints used by the SPA or third-party clients; protected routes use `auth:sanctum`.
-  - Role based groups: routes use middleware like `auth`, `role:admin`, `role:seller`, `role:customer` to restrict access (see groups in [routes/web.php](routes/web.php) and [routes/api.php](routes/api.php)).
-  - Route binding and configuration is centralized via [`App\Providers\RouteServiceProvider`](app/Providers/RouteServiceProvider.php).
-- Authorization & Authentication
-  - Uses Laravel auth scaffolding and middleware across routes. API uses Sanctum for token-based auth (`auth:sanctum` in [routes/api.php](routes/api.php)).
-  - Roles are stored on the `users` table and used in middleware checks.
+  * Apply to become a seller from a normal customer account
+  * Maintain a **seller profile** (store name, contact, address)
+  * CRUD their **books**, including cover image upload
+  * See a **seller dashboard** (own books, revenue, units sold, top books)
+  * View **orders that contain their books** (seller-side order view)
 
-## Important Controllers & Where to Look
+* **Customer**
 
-- Dashboard & role-routing: [`App\Http\Controllers\DashboardController`](app/Http/Controllers/DashboardController.php) — routes users to admin/seller flows or redirects customers to the shop.
-- Admin controllers (examples referenced in routes):
-  - `App\Http\Controllers\Admin\CategoryController` — category CRUD (linked in [routes/web.php](routes/web.php))
-  - `App\Http\Controllers\Admin\UserController`, `App\Http\Controllers\Admin\SellerController` — user & seller management
-- Seller controllers:
-  - `App\Http\Controllers\Seller\ProfileController` — seller profile view/edit
-  - `App\Http\Controllers\Seller\BookController` — seller book CRUD
-- Customer controllers:
-  - `App\Http\Controllers\Customer\CheckoutController` — checkout flow
-  - `App\Http\Controllers\Customer\OrderController` / `PaymentController` — order creation & payment flows
-- API controllers: See imports at the top of [routes/api.php](routes/api.php) such as `App\Http\Controllers\Api\BookController`, `CategoryController`, `OrderController`, `SellerProfileController`, `WishlistController`.
+  * **Register & log in**
+  * **Browse** the shop with filters (search, category, price)
+  * View a **book hero page** (cover, description, seller, category)
+  * Add books to **wishlist** (with “already in wishlist” state)
+  * Go through a **checkout + mock payment** flow
+  * View their **order history** and individual order details
 
-(Exact controller files are referenced by the namespace imports in [routes/web.php](routes/web.php) and [routes/api.php](routes/api.php).)
+### Main UX Flow
 
-## Models & Data Relationships
+* After login:
 
-- Core models live in `app/Models`. The dashboard imports many of them in [`App\Http\Controllers\DashboardController`](app/Http/Controllers/DashboardController.php):
-  - [`App\Models\Book`](app/Models/Book.php) — book attributes, status, stock and seller relations.
-  - [`App\Models\Category`](app/Models/Category.php) — categories for books.
-  - [`App\Models\Order`](app/Models/Order.php) and [`App\Models\OrderItem`](app/Models/OrderItem.php) — orders, line items and revenue calculations.
-  - [`App\Models\SellerProfile`](app/Models/SellerProfile.php) — seller-specific metadata and approval status.
-  - [`App\Models\User`](app/Models/User.php) — users with `role` attribute (admin, seller, customer).
-  - [`App\Models\Wishlist`](app/Models/Wishlist.php) — customer wishlists.
-- Use Eloquent relationships (hasMany, belongsTo) to navigate between users, books, orders and seller profiles.
+  * **Admin** → `/dashboard` (admin dashboard)
+  * **Seller** → `/dashboard` (seller dashboard)
+  * **Customer** → `/shop` (storefront; customers don’t need a stats dashboard first)
 
-## Routes & Example Endpoints
+---
 
-- Public shop pages (web):
-  - GET /shop — [routes/web.php](routes/web.php)
-  - GET /shop/books/{book:slug} — public book page
-- Auth & user flows:
-  - POST /login, POST /register, POST /logout — managed via auth controllers referenced in [routes/web.php](routes/web.php)
-- Customer API (protected by Sanctum):
-  - GET /api/me, POST /api/logout, GET /api/orders, POST /api/orders — see [routes/api.php](routes/api.php)
-  - Wishlist endpoints: GET /api/wishlist, POST /api/wishlist, DELETE /api/wishlist/{wishlist}
-- Admin API:
-  - Admin-only resource routes registered under `/api/admin/*` in [routes/api.php](routes/api.php)
+## 🧱 Tech Stack & Architecture
 
-Refer to the route files for the full route list: [routes/web.php](routes/web.php), [routes/api.php](routes/api.php).
+* **Framework**: Laravel (classic MVC structure)
+* **Auth**: Laravel auth + **Sanctum** for API authentication
+* **DB**: Eloquent ORM, with UUID primary key for `users.id`
+* **Views**: Blade templates, based on the AdminLTE theme
+* **Front-end**: Mostly server-rendered Blade; a bit of vanilla JS for UX (modals, counters, charts)
+* **Charts**: Chart.js for simple dashboard graphs
 
-## File Structure (high level)
+### Key Patterns
 
-- app/ — PHP application code (Controllers, Models, Providers)
-  - app/Http/Controllers — web & API controllers
-  - app/Models — Eloquent models
-  - app/Providers — service providers (e.g. [`App\Providers\RouteServiceProvider`](app/Providers/RouteServiceProvider.php))
-- config/ — application configuration ([config/app.php](config/app.php))
-- resources/views — Blade templates for web UI
-- routes/ — route definitions ([routes/web.php](routes/web.php), [routes/api.php](routes/api.php))
-- public/ — compiled assets (can be ignored in documentation; front-end tooling is configured via [package.json](package.json))
-- tests/ — unit & feature tests (configured by [phpunit.xml](phpunit.xml))
+* **Models** (`app/Models`):
 
-## Running the project (local)
+  * `User` (with `role` column: `admin`, `seller`, `customer`)
+  * `SellerProfile` (per-seller info + `status`: `pending`, `approved`, `rejected`)
+  * `Category`
+  * `Book` (belongs to `Category` & `User` as seller, uses slug for routing)
+  * `Order`, `OrderItem`
+  * `Wishlist`
+* **Controllers** (`app/Http/Controllers`):
 
-1. Copy .env example and set up database:
-   - cp .env.example .env
-   - set database credentials and APP_URL in [.env](.env)
-2. Install PHP deps:
-   - composer install
-3. Install node deps & compile assets:
-   - npm install
-   - npm run dev (or npm run build)
-4. Run migrations & seeders:
-   - php artisan migrate --seed
-5. Run app:
-   - php artisan serve
-6. Run tests:
-   - vendor/bin/phpunit (configured by [phpunit.xml](phpunit.xml))
+  * `DashboardController` — decides which dashboard/redirect to show based on the logged-in user’s role
+  * `Admin\*` — user, seller, category management
+  * `Seller\*` — seller profile, books, seller-side orders
+  * `Shop\*` — public shop + book hero page
+  * `Customer\*` — checkout, payment, customer orders, wishlist
+  * `Api\*` — JSON endpoints for books, categories, orders, wishlist, seller profile (protected with Sanctum)
+* **Routes**:
 
-## Notes for Contributors
+  * `routes/web.php` — all browser pages and HTML forms
 
-- Focus on controllers, API resources and tests when adding features.
-- Keep route groups organized by middleware and role, as in [routes/web.php](routes/web.php) and [routes/api.php](routes/api.php).
-- Place new controllers under the appropriate namespace and folder (e.g. `app/Http/Controllers/Admin`).
-- Add/update API resource tests in `tests/` and register any new config in `config/` as needed.
+    * Role-based groups with `auth` + `role:admin`, `role:seller`, `role:customer`
+    * Clean, slug-based book/category URLs using route model binding:
 
-## Where to look first in the repo
+      * `/shop`
+      * `/shop/books/{book:slug}`
+      * `/shop/categories/{category:slug}`
+  * `routes/api.php`
 
-- Route definitions: [routes/web.php](routes/web.php), [routes/api.php](routes/api.php)  
-- Dashboard / role routing: [`App\Http\Controllers\DashboardController`](app/Http/Controllers/DashboardController.php)  
-- Models: `app/Models/*` (see links above)  
-- Views: `resources/views`  
+    * Public API endpoints for listing books/categories
+    * Protected API endpoints for logged-in users via `auth:sanctum`
+
+---
+
+## 🔐 Authentication & Roles
+
+* **Authentication**
+
+  * Normal web login/register for all users
+  * Sanctum used for API auth with `auth:sanctum` middleware
+
+* **Role handling**
+
+  * `users.role` column stores a simple string (`admin`, `seller`, `customer`)
+  * Custom `role:` middleware applied to route groups:
+
+    * `role:admin`
+    * `role:seller`
+    * `role:customer`
+    * or combinations like `role:admin,seller`
+
+* **Seller application flow**
+
+  * All new registrations start as **customers**
+  * Customers can navigate to `Apply as Seller`
+
+    * Creates/updates a `SellerProfile` with `status = pending`
+  * Admin reviews applications under the admin seller management page
+
+    * On approval:
+
+      * `seller_profiles.status` → `approved`
+      * `users.role` → `seller`
+    * On rejection:
+
+      * `seller_profiles.status` → `rejected`
+      * `rejection_reason` stored for display to the user
+
+---
+
+## 🛒 Shop, Orders & Payments
+
+### Browsing
+
+* `/shop` — searchable, paginated grid of books:
+
+  * Filters: search by title, category dropdown, min/max price
+  * Each book card shows:
+
+    * Cover image (or placeholder)
+    * Title
+    * Category
+    * Price
+    * Stock status
+    * “View details” button
+    * “Add to wishlist” (if logged in as customer; disabled if already in wishlist)
+
+* `/shop/books/{book:slug}` — book hero page:
+
+  * Larger cover image
+  * Category + seller name
+  * Price & stock
+  * Description
+  * “Add to wishlist”
+  * “Buy now” with:
+
+    * Quantity input
+    * Confirmation modal summarising quantity and total
+    * Redirect into checkout flow
+
+### Checkout & Mock Payment
+
+**Flow:**
+
+1. Customer clicks **Buy now** on a book hero page → opens a confirmation modal.
+2. On confirmation:
+
+   * POST to `customer/checkout/start`
+   * Book and quantity stored in session
+3. `/customer/checkout`:
+
+   * Shows summary (title, qty, unit price, total)
+   * Customer chooses **payment method**:
+
+     * FPX
+     * Card
+     * E-wallet
+4. On confirmation:
+
+   * Creates an `Order` with `status = pending_payment`
+   * Creates corresponding `OrderItem`
+   * Decrements stock
+   * Redirects to a **mock payment page**
+5. Mock gateway (`/customer/payment/{order}`):
+
+   * Shows order details & payment method
+   * “Pay Now” → sets `status = paid`, sets `paid_at`, redirects to order detail
+   * “Cancel Payment” → sets `status = cancelled`, restores stock, redirects to order list
+
+### Customer Orders & Wishlist
+
+* **Orders**
+
+  * `/customer/orders` — list of customer’s orders with status and total
+  * `/customer/orders/{id}` — shows items, quantities, prices, and totals
+
+* **Wishlist**
+
+  * `/customer/wishlist` — grid of saved books
+  * “Add to wishlist” on shop/hero pages:
+
+    * Uses `Wishlist::firstOrCreate` to avoid duplicates
+    * If a book is already in wishlist:
+
+      * Button is disabled and labelled “In Wishlist”
+  * Remove from wishlist via a simple DELETE form
+
+---
+
+## 🏪 Seller Features
+
+* **Seller dashboard** (`/dashboard` when role = seller)
+
+  * Summary cards:
+
+    * Total books
+    * Active books
+    * Units sold (for paid orders)
+    * Total revenue (for paid orders)
+  * Chart:
+
+    * Revenue over the last 7 days (Chart.js line chart)
+  * Table:
+
+    * Top selling books (units + revenue)
+    * Recent orders that include this seller’s books
+
+* **Books management**
+
+  * List, create, edit, delete books
+  * Cover image upload stored in `storage/app/public`, served via `storage` symlink
+  * Slug automatically generated for SEO-friendly URLs
+
+* **Seller-side orders**
+
+  * `/seller/orders` — list of order items that involve the seller’s books
+  * `/seller/orders/{order}` — detail view of a specific order, but restricted to:
+
+    * Only line items belonging to this seller
+    * Seller’s own total for that order
+
+---
+
+## 🛠 Admin Features
+
+* **Admin dashboard** (`/dashboard` when role = admin)
+
+  * Counters:
+
+    * Total users, customers, sellers
+    * Pending seller applications
+    * Total books, active books, out-of-stock books
+    * Paid orders & total revenue
+  * Charts & tables:
+
+    * Orders & revenue over the last 7 days (Chart.js bar + line combo)
+    * Top categories by revenue
+    * Top sellers by revenue
+
+* **Management panels**
+
+  * Users
+
+    * CRUD for users
+    * Role management
+  * Categories
+
+    * CRUD with sorting/filtering
+  * Sellers
+
+    * List all sellers
+    * Review seller applications
+    * Approve/reject with optional rejection reason
+
+---
+
+## 🎨 UI Details
+
+* Layout built on **AdminLTE** theme
+* Shared layout includes:
+
+  * Sidebar (role-aware menu: admin, seller, customer sections)
+  * Top navbar
+  * Breadcrumbs
+  * Flash messages (e.g. “Book added to wishlist”, “Application submitted”)
+* Dashboard numbers use a small JS helper to **animate counters** from 0 up to their values on page load.
+
+---
+
+## 🚀 Getting Started (Local)
+
+1. **Clone & install dependencies**
+
+   ```bash
+   git clone https://github.com/hassssbi/bookly.git
+   cd bookly
+   composer install
+   npm install
+   ```
+
+2. **Environment**
+
+   ```bash
+   cp .env.example .env
+   ```
+
+   * Set your DB connection, `APP_URL`, and other relevant settings inside `.env`.
+
+3. **App key**
+
+   ```bash
+   php artisan key:generate
+   ```
+
+4. **Database**
+
+   ```bash
+   php artisan migrate
+   # Optional: if you have seeders
+   # php artisan db:seed
+   ```
+
+5. **Storage symlink (for covers)**
+
+   ```bash
+   php artisan storage:link
+   ```
+
+6. **Run the app**
+
+   ```bash
+   php artisan serve
+   ```
+
+7. **Frontend assets** (if needed)
+
+   ```bash
+   npm run dev   # for local dev
+   # or
+   npm run build # for production build
+   ```
+
+8. **Access**
+
+   * Visit `http://localhost:8000`
+   * Register a user (customer by default)
+   * Log in as admin (or promote your user via DB) to access admin dashboard
+   * Apply as seller from the customer account to test the seller flow
+
+---
+
+## 🧭 Where to Look First
+
+* **Routes**
+
+  * Web: `routes/web.php`
+  * API: `routes/api.php`
+* **Role routing & dashboards**
+
+  * `app/Http/Controllers/DashboardController.php`
+* **Core models**
+
+  * `app/Models/User.php`, `Book.php`, `Category.php`, `Order.php`, `OrderItem.php`, `SellerProfile.php`, `Wishlist.php`
+* **Role-specific controllers**
+
+  * `app/Http/Controllers/Admin/*`
+  * `app/Http/Controllers/Seller/*`
+  * `app/Http/Controllers/Customer/*`
+  * `app/Http/Controllers/Shop/*`
+  * `app/Http/Controllers/Api/*`
+* **Views**
+
+  * `resources/views/layouts/*`
+  * `resources/views/dashboard/*`
+  * `resources/views/shop/*`
+  * `resources/views/admin/*`
+  * `resources/views/seller/*`
+  * `resources/views/customer/*`
